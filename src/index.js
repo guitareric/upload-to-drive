@@ -5,7 +5,7 @@ const { authenticate } = require('@google-cloud/local-auth')
 const { google } = require('googleapis')
 
 // If modifying these scopes, delete token.json.
-const SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+const SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 // The file token.json stores the user's access and refresh tokens, and is
 // created automatically when the authorization flow completes for the first
 // time.
@@ -66,25 +66,26 @@ async function authorize() {
 }
 
 /**
- * Lists the names and IDs of up to 10 files.
- * @param {OAuth2Client} authClient An authorized OAuth2 client.
+ * Prints the names and majors of students in a sample spreadsheet:
+ * @see https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
+ * @param {google.auth.OAuth2} auth The authenticated Google OAuth client.
  */
-async function listFiles(authClient) {
-  const drive = google.drive({ version: 'v3', auth: authClient })
-  const res = await drive.files.list({
-    pageSize: 10,
-    fields: 'nextPageToken, files(id, name)',
+async function listMajors(auth) {
+  const sheets = google.sheets({ version: 'v4', auth })
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: '1a50gNBCmjUKpZCCaHYpX8aUtc6QgX0VJuKDVLmtGWoc',
+    range: 'Utah Inventory!A2:I',
   })
-  const files = res.data.files
-  if (files.length === 0) {
-    console.log('No files found.')
+  const rows = res.data.values
+  if (!rows || rows.length === 0) {
+    console.log('No data found.')
     return
   }
-
-  console.log('Files:')
-  files.map(file => {
-    console.log(`${file.name} (${file.id})`)
+  console.log('Name, Major:')
+  rows.forEach(row => {
+    // Print columns A and E, which correspond to indices 0 and 4.
+    console.log(`${row[0]}, ${row[1]}, ${row[2]}, ${row[3]}, ${row[4]}, ${row[5]}, ${row[6]}, ${row[7]}, ${row[8]}`)
   })
 }
 
-authorize().then(listFiles).catch(console.error)
+authorize().then(listMajors).catch(console.error)
